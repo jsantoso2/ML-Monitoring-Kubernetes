@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-master
+  labels:
+    app: locust-master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust-master
+  template:
+    metadata:
+      labels:
+        app: locust-master
+    spec:
+      containers:
+        - name: locust
+          image: gcr.io/causal-guide-369201/load-test-locust:v1
+          command:
+            - locust
+          args:
+            - -f
+            - locustfile.py
+            - --host
+            - http://wine-quality-model-service-ip:port
+            - --users
+            - "1"
+            - --spawn-rate
+            - "1"
+          ports:
+            - name: loc-master-web
+              containerPort: 8089
+              protocol: TCP
+          resources:
+            requests:
+              memory: 100Mi
+              cpu: 100m
+            limits:
+              memory: 200Mi
+              cpu: 200m
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: locust-master-service
+  labels:
+    app: locust-master
+spec:
+  selector:
+    app: locust-master
+  ports:
+    - name: app
+      port: 8089
+  type: ClusterIP
